@@ -50,3 +50,21 @@
 - Refactored import and export paths across the codebase (`src/index.ts`, `src/model/account.ts`, `src/model/account.test.ts`, `src/model/money.test.ts`, `src/types/index.test.ts`, `src/index.test.ts`) to clean extensionless relative paths (e.g. `import type { LedgerEvent } from "../types"`).
 - Updated `package.json` execution script (`start`) to run with `tsx` for extensionless module resolution support.
 - Verified all 82 unit tests pass (`vitest --run`), ESLint check passes (`npm run lint`), and TypeScript build succeeds (`tsc --outDir dist`).
+
+### 18:00:00 +0400 — Core Ledger Engine implementation (src/core/engine.ts)
+- Implemented `LedgerEngine` (and `Engine` alias) in `src/core/engine.ts` storing an append-only journal of all posted ledger entries.
+- Implemented `getClosingBalance(accountId, valueDay)` which filters entries where `valueDay <= requested valueDay` and sums ledger debits/credits.
+- Implemented Daily Interest Check calculating 0.04% on positive closing ledger balance, rounded to currency precision, and recorded as daily accruals.
+- Implemented Day 5 Overdraft Check performing historical lookback on closing balances for Days 1–4; retroactively negative balances (e.g., caused by backdated entry E7) trigger a single AED 25.00 overdraft fee on Day 5 (`valueDay = 5`, `postedDay = 5`).
+- Implemented Day 6 Capitalization summing daily rounded accruals across Days 1–5 and posting a single `CREDIT` event on Day 6.
+- Added full multi-day simulation and EOD batch runner (`processEOD`, `runSimulation`).
+- Added comprehensive unit tests in `src/core/engine.test.ts` covering entries, balances, daily interest, backdated overdraft checks, Day 6 capitalization, and multi-day EOD workflows.
+- Documented constants in `NUMBERS.md` and exported core engine components in `src/index.ts`.
+- Verified TypeScript compilation (`tsc --outDir dist`), ESLint rules (`npm run lint`), and Vitest test suite (`vitest --run`).
+
+### 18:06:00 +0400 — Sequential event replay and Daily Report table implementation (src/index.ts)
+- Built `src/index.ts` replaying events E1 through E10 sequentially across Days 1–6.
+- Implemented formatted daily report table output printing: Closing Balance, Available Balance, Fee Assessments, Authorization States, and Errors/Rejections.
+- Covered all financial lifecycle paths: credits, authorizations with hold locks, matched settlements, hold rejection on insufficient available balance (E4), active hold reversals (E6), backdated debit causing historical negative closing balance (E7), unmatched settlement direct debit (E8 Auth-Z), Day 5 overdraft fee assessment, and Day 6 interest capitalization.
+- Added a comprehensive unit test suite in `src/index.test.ts` validating sequential replay metrics and table formatting output.
+- Updated `package.json` `start` script and verified `npm run lint`, `vitest --run`, and `tsc --outDir dist`.

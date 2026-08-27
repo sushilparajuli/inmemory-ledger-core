@@ -102,3 +102,45 @@ This document details every numeric constant, scaling parameter, and default val
 - **Why not half it (1.5 or 2)?**
   - 1.5 digits grouping is syntactically invalid in regex character grouping.
   - 2 digits grouping is used in the South Asian numbering system (lakh/crore) for numbers above 1,000, but is not standard for universal multi-currency international ledgers (e.g., $100,000 vs ₹1,00,000).
+
+---
+
+### 10. Daily Interest Rate (`0.04%` / `0.0004` / `4n` over `10000n`)
+- **Code Location**: `src/core/engine.ts` (`dailyInterestRate`, `calculateDailyInterest`)
+- **Chosen Value**: `0.04%` ($4 \times 10^{-4}$ or 4 basis points per day)
+- **Why this value?**
+  - Specified contractual daily interest yield on positive closing ledger balance, representing an annualized simple return of approximately 14.6% ($0.04\% \times 365$).
+  - Exact integer calculation: $\text{balance} \times 4 / 10000$.
+- **Why not half it (0.02%)?**
+  - Halving to 0.02% (2 basis points) halves the contractual yield to depositors by 50%, resulting in systematic under-accrual and breach of account terms.
+
+---
+
+### 11. Overdraft Penalty Fee (`AED 25.00` / `2500n` minor units)
+- **Code Location**: `src/core/engine.ts` (`overdraftFeeAmount: 2500n`)
+- **Chosen Value**: `2500n` minor units (AED 25.00)
+- **Why this value?**
+  - Standard administrative penalty assessed when historical backdated entries induce negative ledger balances.
+  - In AED (2 decimals), 25.00 AED is strictly represented as 2,500 fils.
+- **Why not half it (1250n / AED 12.50)?**
+  - Halving to 12.50 AED violates the regulatory/business penalty schedule and fails to penalize unarranged credit exposures according to the ledger specification.
+
+---
+
+### 12. Historical Lookback Assessment Day (`Day 5`)
+- **Code Location**: `src/core/engine.ts` (`checkAndAssessOverdraftFee`, `processEODForAccount`)
+- **Chosen Value**: `Day 5`
+- **Why this value?**
+  - Day 5 marks the scheduled end-of-cycle risk audit day where all backdated transactions (such as E7) are evaluated against historical value dates (Days 1–4) for retroactively induced negative balances.
+- **Why not half it (Day 2.5 / Day 3)?**
+  - Assessing on Day 2.5 is impossible in integer day cycles; assessing on Day 3 would run before backdated Day 5 events arrive, missing post-Day-3 backdated entries.
+
+---
+
+### 13. Interest Capitalization Day (`Day 6`)
+- **Code Location**: `src/core/engine.ts` (`capitalizeInterest`, `processEODForAccount`)
+- **Chosen Value**: `Day 6`
+- **Why this value?**
+  - Day 6 is the contractual capitalization boundary where accrued daily interest across the calculation period is aggregated and credited as a single ledger transaction.
+- **Why not half it (Day 3)?**
+  - Halving to Day 3 cuts the compounding period in half, causing premature compounding and altering the effective annual rate.

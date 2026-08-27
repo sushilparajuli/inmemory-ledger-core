@@ -23,6 +23,7 @@ export class InsufficientFundsError extends AuthorizationError {
 export class Account {
   readonly id: string;
   readonly currency: string;
+  readonly initialBalance: bigint;
   private _ledgerBalance: bigint;
   private readonly _holds: Map<string, bigint>;
 
@@ -33,13 +34,15 @@ export class Account {
       }
       this.id = idOrConfig.id;
       this.currency = idOrConfig.currency ?? currency;
-      this._ledgerBalance = idOrConfig.initialBalance ?? 0n;
+      this.initialBalance = idOrConfig.initialBalance ?? 0n;
+      this._ledgerBalance = this.initialBalance;
     } else {
       if (typeof idOrConfig !== "string" || idOrConfig.trim() === "") {
         throw new TypeError("Account ID must be a non-empty string");
       }
       this.id = idOrConfig;
       this.currency = currency;
+      this.initialBalance = initialBalance;
       this._ledgerBalance = initialBalance;
     }
 
@@ -47,7 +50,7 @@ export class Account {
   }
 
   /**
-   * Returns current ledger balance in minor units.
+   * Returns a current ledger balance in minor units.
    */
   get ledgerBalance(): bigint {
     return this._ledgerBalance;

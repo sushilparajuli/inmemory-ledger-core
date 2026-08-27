@@ -121,7 +121,11 @@ export class LedgerEngine {
       throw new Error(`Account not found: ${event.accountId}`);
     }
 
-    const success = account.processEvent(event);
+    const targetEvent = event.targetEventId
+      ? this._entries.find((e) => e.id === event.targetEventId)
+      : undefined;
+
+    const success = account.processEvent(event, targetEvent);
     if (success) {
       this._entries.push(Object.freeze({ ...event }));
     }
@@ -167,9 +171,22 @@ export class LedgerEngine {
           balance -= entry.amount;
           break;
         case "REVERSAL":
-          // If reversal targets an authId, it only releases holds; otherwise it credits back ledger
+          // If reversal targets an authId, it only releases holds;
+          // If reversal targets a specific event ID:
+          //   - If target was CREDIT -> subtract amount (reversal of credit)
+          //   - If target was DEBIT or SETTLEMENT -> add amount (reversal of debit)
+          // Otherwise (legacy default) -> add amount (credit refund)
           if (!entry.authId) {
-            balance += entry.amount;
+            if (entry.targetEventId) {
+              const target = this._entries.find((e) => e.id === entry.targetEventId);
+              if (target?.type === "CREDIT") {
+                balance -= entry.amount;
+              } else {
+                balance += entry.amount;
+              }
+            } else {
+              balance += entry.amount;
+            }
           }
           break;
         case "AUTHORIZATION":
@@ -226,6 +243,13 @@ export class LedgerEngine {
    */
   getDailyAccruals(accountId: string): Map<number, bigint> {
     return new Map(this._dailyAccruals.get(accountId) ?? []);
+  }
+
+  /**
+   * Checks whether the overdraft fee has been assessed for an account.
+   */
+  hasAssessedOverdraftFee(accountId: string): boolean {
+    return this._overdraftAssessed.get(accountId) ?? false;
   }
 
   /**

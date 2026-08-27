@@ -214,8 +214,9 @@ export class Account {
 
   /**
    * Processes a generic LedgerEvent.
+   * Optionally accepts targetEvent when resolving REVERSAL events.
    */
-  processEvent(event: LedgerEvent): boolean {
+  processEvent(event: LedgerEvent, targetEvent?: LedgerEvent): boolean {
     switch (event.type) {
       case "CREDIT":
         this.processCredit(event.amount);
@@ -233,7 +234,15 @@ export class Account {
           this.releaseHold(event.authId);
           return true;
         }
-        // If target event or general reversal of debit/credit
+        if (targetEvent) {
+          if (targetEvent.type === "CREDIT") {
+            this.processDebit(event.amount);
+          } else {
+            this.processCredit(event.amount);
+          }
+          return true;
+        }
+        // Default (reversing debit/settlement or fee refund)
         this.processCredit(event.amount);
         return true;
       default:

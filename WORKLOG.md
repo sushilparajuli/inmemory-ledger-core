@@ -68,3 +68,11 @@
 - Covered all financial lifecycle paths: credits, authorizations with hold locks, matched settlements, hold rejection on insufficient available balance (E4), active hold reversals (E6), backdated debit causing historical negative closing balance (E7), unmatched settlement direct debit (E8 Auth-Z), Day 5 overdraft fee assessment, and Day 6 interest capitalization.
 - Added a comprehensive unit test suite in `src/index.test.ts` validating sequential replay metrics and table formatting output.
 - Updated `package.json` `start` script and verified `npm run lint`, `vitest --run`, and `tsc --outDir dist`.
+
+### 18:18:00 +0400 — Domain Invariant Test, Ambiguities & Rejected Criteria Documentation
+- Created `tests/failing_annotated.test.ts` testing that reversing an event (E9) does NOT undo past posted overdraft fees, annotated with domain invariant explanations regarding ledger immutability.
+- Enhanced `LedgerEngine` and `Account` to support target event reversal handling (reversing `CREDIT` debits balance; reversing `DEBIT` credits balance) while preserving append-only fee entries.
+- Created `AMBIGUITIES.md` documenting architectural resolution for Auth-Z unmatched settlements, Day 5 E10 replay ordering vs. EOD processing, and overdraft fee booking dates.
+- Created `REJECTED.md` detailing mathematical and banking takedowns of false criteria C2, C4, C6, C7, and C8.
+- Updated `tsconfig.json` to properly manage `src/` and `tests/` compilation.
+- Verified all tests pass (`vitest --run`), ESLint check passes (`npm run lint`), and TypeScript build succeeds (`tsc --outDir dist`).

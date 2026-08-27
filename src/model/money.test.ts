@@ -6,7 +6,7 @@ import {
   money,
   registerCurrency,
   roundDivision,
-} from "./money.js";
+} from "./money";
 
 describe("Money - minor unit representation", () => {
   it("represents currency values strictly as minor-unit integers", () => {
